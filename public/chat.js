@@ -47,7 +47,9 @@ document.addEventListener('DOMContentLoaded', e => {
   // 채팅 메시지가 올 때마다 출력
   socket.on('chat', data => {
     const messageEl = appendText(formatMessage(data))
-    messageEl.classList.remove('new')
+    setTimeout(() => {
+      messageEl.classList.remove('new')
+    })
   })
 
   // 새 사용자가 접속한 사실을 출력
