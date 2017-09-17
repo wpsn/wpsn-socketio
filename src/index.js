@@ -26,6 +26,7 @@ const sessionMiddleware = cookieSession({
   ]
 })
 app.set('view engine', 'pug')
+app.set('trust proxy')
 
 app.use(express.static(path.join(__dirname, '..', 'public')))
 app.use(bodyParser.urlencoded({extended: false}))
