@@ -3,7 +3,7 @@ extends layouts/main
 block content
   .p-3
     h1 Account Info
-    p= `Username: ${user.username}`
+    p Username: #{user.username}
   form.p-3(action="/logout", method="post")
     input(type="hidden", name="_csrf", value=csrfToken)
     button.btn.btn-primary(type="submit") 로그아웃
