@@ -5,9 +5,14 @@ document.addEventListener('DOMContentLoaded', e => {
   const formEl = document.querySelector('#chat-form')
   const messageListEl = document.querySelector('#messages')
 
-  // socket.io 연결 수립
+  // socket.io 연결 수립하고 username 설정
   const roomId = formEl.dataset.room
-  const socket = io(`/room/${roomId}`)
+  const socket = io(`/chat`)
+  socket.emit('join', {roomId}, data => {
+    username = data.username
+    console.log(`success with username ${username}`)
+    formEl.elements.message.removeAttribute('disabled')
+  })
 
   // 메시지를 DOM에 표시하기 위한 함수
   function appendText(text) {
@@ -23,13 +28,6 @@ document.addEventListener('DOMContentLoaded', e => {
   function formatMessage({username, message}) {
     return `${username}: ${message}`
   }
-
-  // 연결 수립되면 메시지 출력하고 폼 활성화
-  socket.on('username', data => {
-    username = data.username
-    console.log(`success with username ${username}`)
-    formEl.elements.message.removeAttribute('disabled')
-  })
 
   // form 전송 이벤트 핸들러
   formEl.addEventListener('submit', e => {
@@ -48,7 +46,8 @@ document.addEventListener('DOMContentLoaded', e => {
 
   // 채팅 메시지가 올 때마다 출력
   socket.on('chat', data => {
-    appendText(formatMessage(data))
+    const messageEl = appendText(formatMessage(data))
+    messageEl.classList.remove('new')
   })
 
   // 새 사용자가 접속한 사실을 출력

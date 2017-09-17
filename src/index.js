@@ -13,12 +13,13 @@ const middleware = require('./middleware')
 const query = require('./query')
 const util = require('./util')
 
-const rooms = {}
+const PORT = process.env.PORT || 3000
 
 const app = express()
 const httpServer = http.Server(app)
 const io = socketio(httpServer)
-const PORT = process.env.PORT || 3000
+const chatNsp = io.of('/chat')
+
 const sessionMiddleware = cookieSession({
   name: 'chatsession',
   keys: [
@@ -36,6 +37,12 @@ app.use(csurf())
 app.use(middleware.insertReqMiddleware)
 app.use(middleware.insertUserMiddleware)
 app.use(middleware.insertTokenMiddleware)
+
+// socket.io 에서 세션을 사용할 수 있도록 설정
+// https://stackoverflow.com/questions/25532692/how-to-share-sessions-with-socket-io-1-x-and-express-4-x/25618636#25618636
+io.use((socket, next) => {
+  sessionMiddleware(socket.request, socket.request.res, next)
+})
 
 app.get('/', (req, res) => {
   res.render('index.pug')
@@ -94,7 +101,6 @@ app.get('/rooms/:id', middleware.authMiddleware, (req, res, next) => {
   query.getRoomById(req.params.id)
     .then(room => {
       if (room) {
-        getOrCreateRoom(room.id)
         res.render('chat.pug', {room})
       } else {
         next()
@@ -102,55 +108,42 @@ app.get('/rooms/:id', middleware.authMiddleware, (req, res, next) => {
     })
 })
 
-io.use((socket, next) => {
-  sessionMiddleware(socket.request, socket.request.res, next)
-})
+chatNsp.on('connection', socket => {
+  let roomId;
+  const username = socket.request.session.username
+  console.log(`user(${username}) connected`)
 
-function getOrCreateRoom(roomId) {
-  if (roomId in rooms) {
-    return rooms[roomId]
-  } else {
-    rooms[roomId] = createRoom(roomId)
-    return rooms[roomId]
-  }
-}
+  // 최초 접속 시
+  socket.on('join', ({roomId: clientRoomId}, cb) => {
+    roomId = clientRoomId
 
-function createRoom(roomId) {
-  const nsp = io.of(`/room/${roomId}`)
-  nsp.on('connection', socket => {
-    const username = socket.request.session.username
-    console.log(`user(${username}) connected`)
+    // 해당 소켓을 채팅 방에 연결시킨다.
+    socket.join(roomId)
 
-    // username을 클라이언트에 전송
-    socket.emit('username', {username})
+    // 클라이언트에 username을 보낸다.
+    cb({username})
 
-    // 유저가 접속했다는 사실을 다른 모든 유저에게 전송
-    socket.broadcast.emit('user connected', {username})
-
-    // 채팅 메시지가 전송되었을 때
-    socket.on('chat', (message, cb) => {
-      // 성공적으로 전송되었다는 사실을 클라이언트에 알림
-      cb(new Date().toJSON())
-
-      // 해당 클라이언트를 제외한 모든 클라이언트에게 메시지 전송
-      socket.broadcast.emit('chat', {username, message})
-    })
-
-    // 한 클라이언트의 연결이 끊어졌을 때
-    socket.on('disconnect', () => {
-      console.log('user disconnected')
-
-      // 다른 모든 클라이언트에 메시지
-      nsp.emit('user disconnected', {username})
-
-      // 연결된 클라이언트가 하나도 남아있지 않으면 방 삭제
-      nsp.clients((err, clients) => {
-        delete rooms[roomId]
-      })
-    })
+    // 유저가 접속했다는 사실을 다른 모든 유저에게 전송한다.
+    socket.broadcast.to(roomId).emit('user connected', {username})
   })
-  return nsp
-}
+
+  // 채팅 메시지가 전송되었을 때
+  socket.on('chat', (message, cb) => {
+    // 성공적으로 전송되었다는 사실을 클라이언트에 알림
+    cb(new Date().toJSON())
+
+    // 해당 클라이언트를 제외한 모든 클라이언트에게 메시지 전송
+    socket.broadcast.to(roomId).emit('chat', {username, message})
+  })
+
+  // 한 클라이언트의 연결이 끊어졌을 때
+  socket.on('disconnect', () => {
+    console.log('user disconnected')
+
+    // 다른 모든 클라이언트에 알림
+    chatNsp.to(roomId).emit('user disconnected', {username})
+  })
+})
 
 httpServer.listen(PORT, () => {
   console.log(`listenning ${PORT}...`)
