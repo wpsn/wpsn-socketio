@@ -44,6 +44,14 @@ io.use((socket, next) => {
   sessionMiddleware(socket.request, socket.request.res, next)
 })
 
+io.use((socket, next) => {
+  if (socket.request.session.username) {
+    next()
+  } else {
+    next(new Error('Authentication Error'))
+  }
+})
+
 app.get('/', (req, res) => {
   res.render('index.pug')
 })
