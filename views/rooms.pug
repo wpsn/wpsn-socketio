@@ -1,0 +1,13 @@
+extends layouts/main
+
+block content
+  form.p-3(action="/rooms", method="post")
+    input(type="hidden", name="_csrf", value=csrfToken)
+    h1 새 방 만들기
+    .form-group
+      label(for="room-title") 방 이름
+      input#room-title.form-control(type="text", name="title", required)
+    button.btn.btn-primary(type="submit") 생성
+  ul
+    each room in rooms
+      li: a(href=`/rooms/${room.id}`)= room.title

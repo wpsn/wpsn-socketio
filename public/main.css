@@ -1,0 +1,7 @@
+.message {
+  transition: color 1s;
+}
+
+.message.new {
+  color: #ccc;
+}

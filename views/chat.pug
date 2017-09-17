@@ -1,0 +1,14 @@
+extends layouts/main
+
+block append head
+  script(src="/chat.js")
+
+block content
+  h1.p-3= room.title
+  .chat
+    form#chat-form.p-3(autocomplete="off", data-room=room.id)
+      .form-group
+        label(for="messsage") 새 메시지
+        input#message.form-control(type="text", required, disabled)
+      button.btn.btn-primary(type="submit") 전송
+    #messages.p-3

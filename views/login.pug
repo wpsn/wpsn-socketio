@@ -1,0 +1,13 @@
+extends layouts/main
+
+block content
+  form(action="/login", method="post").p-3
+    input(type="hidden", name="_csrf", value=csrfToken)
+    h1 Log in
+    .form-group
+      label(for="input-username", required) Username
+      input.form-control#input-username(type="text", name="username")
+    .form-group
+      label(for="input-password", required) Password
+      input.form-control#input-password(type="password", name="password")
+    button.btn.btn-primary(type="submit") Login
