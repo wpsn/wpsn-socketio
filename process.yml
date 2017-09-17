@@ -1,3 +1,5 @@
 apps:
   - script: src/index.js
     name: chat
+    env_production:
+      NODE_ENV: production
