@@ -29,7 +29,11 @@ module.exports = {
       .where({username})
       .first()
       .then(user => {
-        return bcrypt.compare(password, user.hashed_password)
+        if (user) {
+          return bcrypt.compare(password, user.hashed_password)
+        } else {
+          throw new Error('해당하는 아이디가 존재하지 않습니다.')
+        }
       })
       .then(isMatched => {
         if (!isMatched) {
