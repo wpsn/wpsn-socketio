@@ -18,7 +18,6 @@ const PORT = process.env.PORT || 3000
 const app = express()
 const httpServer = http.Server(app)
 const io = socketio(httpServer)
-const chatNsp = io.of('/chat')
 
 const sessionMiddleware = cookieSession({
   name: 'chatsession',
@@ -116,41 +115,27 @@ app.get('/rooms/:id', middleware.authMiddleware, (req, res, next) => {
     })
 })
 
+const chatNsp = io.of('/chat')
+
 chatNsp.on('connection', socket => {
   let roomId;
   const username = socket.request.session.username
   console.log(`user(${username}) connected`)
 
-  // 최초 접속 시
-  socket.on('join', ({roomId: clientRoomId}, cb) => {
-    roomId = clientRoomId
+  // join 이벤트
+  // 해당 소켓을 room에 연결시킨다.
+  // 클라이언트에 username을 보낸다.
+  // 유저가 접속했다는 사실을 다른 모든 유저에게 전송한다.
 
-    // 해당 소켓을 채팅 방에 연결시킨다.
-    socket.join(roomId)
 
-    // 클라이언트에 username을 보낸다.
-    cb({username})
+  // chat 이벤트
+  // 성공적으로 전송되었다는 사실을 클라이언트에 알림
+  // 해당 클라이언트를 제외한 모든 클라이언트에게 메시지 전송
 
-    // 유저가 접속했다는 사실을 다른 모든 유저에게 전송한다.
-    socket.broadcast.to(roomId).emit('user connected', {username})
-  })
 
-  // 채팅 메시지가 전송되었을 때
-  socket.on('chat', (message, cb) => {
-    // 성공적으로 전송되었다는 사실을 클라이언트에 알림
-    cb(new Date().toJSON())
-
-    // 해당 클라이언트를 제외한 모든 클라이언트에게 메시지 전송
-    socket.broadcast.to(roomId).emit('chat', {username, message})
-  })
-
+  // disconnect 내장 이벤트
   // 한 클라이언트의 연결이 끊어졌을 때
-  socket.on('disconnect', () => {
-    console.log('user disconnected')
-
-    // 다른 모든 클라이언트에 알림
-    chatNsp.to(roomId).emit('user disconnected', {username})
-  })
+  // 다른 모든 클라이언트에 알림
 })
 
 httpServer.listen(PORT, () => {
