@@ -40,9 +40,13 @@ document.addEventListener('DOMContentLoaded', e => {
   })
 
   // (user connected) 새 사용자가 접속한 사실을 출력
-
+  socket.on('user connected', data => {
+    appendText(messageListEl, `${data.username} 님이 접속하셨습니다.`)
+  })
 
   // (user disconnected) 사용자의 연결이 끊어졌다는 사실을 출력
-
+  socket.on('user disconnected', data => {
+    appendText(messageListEl, `${data.username} 님의 접속이 끊겼습니다.`)
+  })
 
 })
