@@ -24,7 +24,10 @@ document.addEventListener('DOMContentLoaded', e => {
   // socket.io 연결 수립하고 room 설정, username 설정
   socket = io('/chat')
 
-  socket.emit('join', {id: roomId})
+  socket.emit('join', {id: roomId}, data => {
+    username = data.username
+    console.log(username)
+  })
 
   // form 전송 이벤트 핸들러
   formEl.addEventListener('submit', e => {
@@ -36,7 +39,7 @@ document.addEventListener('DOMContentLoaded', e => {
 
   // (chat) 채팅 메시지가 올 때마다 출력
   socket.on('chat', data => {
-    appendText(messageListEl, data.message)
+    appendText(messageListEl, `${data.username}: ${data.message}`)
   })
 
   // (user connected) 새 사용자가 접속한 사실을 출력
