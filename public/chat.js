@@ -22,13 +22,22 @@ document.addEventListener('DOMContentLoaded', e => {
   const roomId = formEl.dataset.room
 
   // socket.io 연결 수립하고 room 설정, username 설정
+  socket = io('/chat')
 
+  socket.emit('join', {id: roomId})
 
   // form 전송 이벤트 핸들러
-
+  formEl.addEventListener('submit', e => {
+    e.preventDefault()
+    const message = formEl.elements.message.value
+    socket.emit('new chat', {message})
+    formEl.reset()
+  })
 
   // (chat) 채팅 메시지가 올 때마다 출력
-
+  socket.on('chat', data => {
+    appendText(messageListEl, data.message)
+  })
 
   // (user connected) 새 사용자가 접속한 사실을 출력
 
