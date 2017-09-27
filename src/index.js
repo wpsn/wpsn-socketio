@@ -136,11 +136,12 @@ chatNsp.on('connection', socket => {
   // chat 이벤트
   // 성공적으로 전송되었다는 사실을 클라이언트에 알림
   // 해당 클라이언트를 제외한 모든 클라이언트에게 메시지 전송
-  socket.on('new chat', data => {
-    chatNsp.to(roomId).emit('chat', {
+  socket.on('new chat', (data, ack) => {
+    socket.broadcast.to(roomId).emit('chat', {
       message: data.message,
       username
     })
+    ack({ok: true})
   })
 
   // disconnect 내장 이벤트
